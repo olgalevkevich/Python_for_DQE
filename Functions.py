@@ -27,7 +27,7 @@ def generate_random_dict_list (min_num_dict, max_num_dict, min_num_key, max_num_
 
 # Call the function
 created_dict_list = generate_random_dict_list(2, 10, 1,5, 0, 100)
-print(f'Generated list of dictionaries: {created_dict_list}')
+#print(f'Generated list of dictionaries: {created_dict_list}')
 
 """
 Module 2 Collections. Task 2.
@@ -78,7 +78,7 @@ def create_common_dict (input_dict_list) -> dict:
 
 # Call the function
 created_common_dict = create_common_dict(created_dict_list)
-print(f'Created common dictionary: {created_common_dict}')
+#print(f'Created common dictionary: {created_common_dict}')
 
 """
 Module 3 String Object
@@ -121,7 +121,7 @@ def normalize_letter_cases (input_text) -> str:
 
 # Call the function
 text_normalized = normalize_letter_cases(original_text)
-print(f'Normalized text from letter cases point of view: \n{text_normalized}')
+#print(f'Normalized text from letter cases point of view: \n{text_normalized}')
 
 """
 Module 3 
@@ -145,7 +145,7 @@ def new_sentence_insert (given_text, after_part) -> str:
 
 # Call the function
 text_new_sentence = new_sentence_insert(text_normalized, insert_after_part)
-print(f'Normalized text from letter cases point of view and with new sentence from last words: \n{text_new_sentence}')
+#print(f'Normalized text from letter cases point of view and with new sentence from last words: \n{text_new_sentence}')
 
 """
 Module 3 
@@ -163,7 +163,7 @@ def replace_words (provided_text, replacement_word, inserted_word) -> str:
 
 # Call the function
 text_new_replace_words = replace_words(text_new_sentence, to_replace, to_insert)
-print(f'Normalized text from letter cases point of view with, new sentence from last words and replaced iz with is: \n{text_new_replace_words}')
+#print(f'Normalized text from letter cases point of view with, new sentence from last words and replaced iz with is: \n{text_new_replace_words}')
 
 """
 Module 3 
@@ -176,4 +176,4 @@ def calculate_whitespaces (final_text) -> int:
 
 # Call the function
 number_whitespaces = calculate_whitespaces(text_new_replace_words)
-print(f'Number of whitespaces in the text: {number_whitespaces}')
+#print(f'Number of whitespaces in the text: {number_whitespaces}')

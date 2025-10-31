@@ -1,8 +1,8 @@
 from datetime import datetime
+from Functions import normalize_letter_cases
 # Create class NewsFeed with abstract methods: create_title_info, publish.
 # In each subclass: News, PrivateAd, BirthdayGreeting, publish will be overridden according to the task requirements.
 # create_title_info method will be inherited from NewsFeed class without changes.
-
 class NewsFeed:
     def __init__ (self, post_type, info_text = ''):
         self.post_type = post_type
@@ -13,6 +13,25 @@ class NewsFeed:
             self.title += '\n' + self.info_text
     def publish(self, file):
         pass
+# Create new class PostFromFile - subclass of NewsFeed
+class PostFromFile(NewsFeed):
+    def __init__(self, post_type, file_path, post_lines = []):
+        super().__init__(post_type)
+        self.file_path = file_path
+        self.post_type = post_type
+        self.post_lines = post_lines
+    def read_file(self):
+        with open(self.file_path, "r", encoding="utf-8") as f:
+            self.post_lines = f.readlines()
+        f.close()
+    def publish(self, file):
+        file.write(f'{self.title}\n')
+        for line in self.post_lines:
+                norm_line = normalize_letter_cases(line)
+                file.write(norm_line)
+        file.write('\n\n')
+    def return_file_path(self):
+        return self.file_path
 
 # Create class News - subclass of NewsFeed
 class News(NewsFeed):
