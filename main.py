@@ -2,6 +2,7 @@ import os
 import elevate
 from datetime import datetime
 from NewsFeed import PostFromFile, News, PrivateAd, BirthdayGreeting
+from CreateCSV import FileCSV, WordCountCSV, LetterCountCSV
 if __name__ == "__main__":
     file_name = "news_feed.txt" # specify the path and file name
     while True:
@@ -91,6 +92,17 @@ if __name__ == "__main__":
                     record.publish(file) # call publish method of corresponding record object
                     # display a message about the publication.
                 print("Post published!\n")
+
+                # create an object of WordCountCSV class, call methods: to read created text file, create csv file for word count
+                word_csv = WordCountCSV(file_name)
+                word_csv.read_created_file()
+                word_csv.create_csv()
+
+                # create an object of LetterCountCSV class, call methods: to read created text file, create csv file for letter count
+                letter_csv = LetterCountCSV(file_name)
+                letter_csv.read_created_file()
+                letter_csv.create_csv()
+
             if choice == '4' and file_to_delete != '':
                 # Check if the file exists and delete it
                 try:
