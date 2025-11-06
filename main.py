@@ -1,7 +1,8 @@
 import os
 import elevate
+import json
 from datetime import datetime
-from NewsFeed import PostFromFile, News, PrivateAd, BirthdayGreeting
+from NewsFeed import PostFromFile, News, PrivateAd, BirthdayGreeting, PostFromJsonFile
 from CreateCSV import FileCSV, WordCountCSV, LetterCountCSV
 if __name__ == "__main__":
     file_name = "news_feed.txt" # specify the path and file name
@@ -13,8 +14,9 @@ if __name__ == "__main__":
                 2 - Private Ad
                 3 - Birthday Greeting
                 4 - Post from file
-                5 - Exit the application""")
-            choice = input("Enter your choice (1/2/3/4/5): ")
+                5 - Post from json file
+                6 - Exit the application""")
+            choice = input("Enter your choice (1/2/3/4/5/6): ")
             # create a function that generate post title
 
             # If post type: 1 - News, ask enter required News data. Create a record  - object of News class.
@@ -77,8 +79,30 @@ if __name__ == "__main__":
                         else:
                             print("Invalid choice. Try again.")
                             continue
+            # if post type: 5 - Post from json file, ask enter required  file path. Create a record  - object of PostFromJsonFile class.
+            elif choice == '5':
+                while True:
+                    file_path_json_user = input("Enter json file path or enter '-' to use default path: ")
+                    if file_path_json_user == '-':
+                        file_path_json_user =  "C:/Users/post_json.json"
+                    record = PostFromJsonFile('Post from json file', file_path_json_user)
+                    try:
+                        record.read_json_file()
+                        file_json_to_delete = record.return_file_path()
+                        break
+                    except(FileNotFoundError, PermissionError, json.decoder.JSONDecodeError):
+                        print ("Entered json file path is incorrect or json file does not exists or json file has wrong format")
+                        choice_file = input("Do you want to enter again (y/n)? : ")
+                        if choice_file == 'y':
+                            continue
+                        elif choice_file == 'n':
+                            file_json_to_delete = ''
+                            break
+                        else:
+                            print("Invalid choice. Try again.")
+                            continue
             # if Exit then stop ask question, break while loop
-            elif choice == "5":
+            elif choice == "6":
                 print("Exiting.")
                 break
             # else - warning message, continue asking questions
@@ -87,7 +111,7 @@ if __name__ == "__main__":
                 continue
             record.create_title_info()
             # Open specified file to write data to the end of the file.
-            if choice != '4' or (choice == '4' and file_to_delete != ''):
+            if (choice != '4' and choice != '5') or (choice == '4' and file_to_delete != ''):
                 with open(file_name, "a", encoding="utf-8") as file:
                     record.publish(file) # call publish method of corresponding record object
                     # display a message about the publication.
@@ -102,6 +126,38 @@ if __name__ == "__main__":
                 letter_csv = LetterCountCSV(file_name)
                 letter_csv.read_created_file()
                 letter_csv.create_csv()
+
+            if choice == '5' and file_json_to_delete != '':
+                with open(file_name, "a", encoding="utf-8") as file:
+                    record.publish(file) # call publish method of corresponding record object
+                    # display a message about the publication.
+                flag_to_delete = record.not_remove
+                if flag_to_delete == 1:
+                    print("Not all posts from json file published!\n")
+                else:
+                    print("All posts from json file published!\n")
+                try:
+                    if flag_to_delete == 0:
+                        os.path.exists(file_json_to_delete)
+                        os.remove(file_json_to_delete)
+                        print(f"File '{file_json_to_delete}' has been deleted.\n")
+                    else:
+                        print(f"File '{file_json_to_delete}' has not been deleted as file doesn't have the required format.\n")
+                except(FileNotFoundError):
+                    print(f"File '{file_json_to_delete}' does not exist.")
+                except(PermissionError):
+                    print(
+                        f"Access to '{file_json_to_delete}' is denied. To delete the file, the program must be restarted to elevate its privileges. All published posts will remain published.")
+                    while True:
+                        choice_permitions = input("Do you want to restart the program? Enter your choice (y/n): ")
+                        if choice_permitions == 'y':
+                            elevate.elevate()
+                            break
+                        elif choice_permitions == 'n':
+                            break
+                        else:
+                            print("Invalid choice. Try again.")
+                            continue
 
             if choice == '4' and file_to_delete != '':
                 # Check if the file exists and delete it

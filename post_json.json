@@ -1,0 +1,18 @@
+[
+  {
+    "type": 1,
+    "news": "A new exhibition of contemporary art has opened.",
+    "city": "Warsaw"
+  },
+  {
+    "type": 2,
+    "private_ad": "Apartment for sale. Contact number: +375297413612",
+    "expiration_date": "22/11/2025"
+  },
+  {
+    "type": 3,
+    "person": "Marina Petrova",
+    "year_of_birth": 1970,
+    "birthday_greeting": "Happy Birthday!"
+  }
+]
