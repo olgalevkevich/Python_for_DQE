@@ -1,5 +1,6 @@
 from datetime import datetime
 from Functions import normalize_letter_cases
+import json
 # Create class NewsFeed with abstract methods: create_title_info, publish.
 # In each subclass: News, PrivateAd, BirthdayGreeting, publish will be overridden according to the task requirements.
 # create_title_info method will be inherited from NewsFeed class without changes.
@@ -13,6 +14,57 @@ class NewsFeed:
             self.title += '\n' + self.info_text
     def publish(self, file):
         pass
+# Create new class PostFromJsonFile - subclass of NewsFeed
+class PostFromJsonFile(NewsFeed):
+    def __init__(self, post_type, file_path, posts_json = [], not_remove = 0):
+        super().__init__(post_type)
+        self.file_path = file_path
+        self.post_type = post_type
+        self.posts_json = posts_json
+        self.not_remove = not_remove
+    def read_json_file(self):
+        #self.posts_json = json.load(open(self.file_path))
+        with open(self.file_path, 'r', encoding='utf-8') as f:
+            self.posts_json = json.load(f)
+    def publish(self, file):
+        for element in self.posts_json:
+            try:
+                if element['type'] == 1:
+                    formatted_date_time = datetime.now().strftime("%d/%m/%Y %H.%M")  # get the current date and time, format datetime objects into strings with a required date/time format
+                    self.title = self.title.replace("Post from json file", "News")
+                    file.write(f"{self.title}\n{element['news']}\n{element['city']}, {formatted_date_time}\n\n")
+                    self.title = self.title.replace("News", "Post from json file")
+                elif element['type'] == 2:
+                    try: # validate format and value of expiration date
+                        datetime.strptime(element['expiration_date'], "%d/%m/%Y")
+                        expiration_date_json = datetime.strptime(element['expiration_date'], "%d/%m/%Y")
+                        days_left = (expiration_date_json - datetime.now()).days  # calculate days left
+                        self.title = self.title.replace("Post from json file", "Private Ad")
+                        file.write(f"{self.title}\n{element['private_ad']}\nActual until: {expiration_date_json.strftime('%d/%m/%Y')}, {days_left} days left\n\n")
+                        self.title = self.title.replace("Private Ad", "Post from json file")
+                    except (ValueError):
+                        print(f"Expiration date has wrong format. The post '{element}' can not be published.")
+                        self.not_remove = 1
+                elif element['type'] == 3:
+                    try: # validate data type and value of year of birth
+                        int(element['year_of_birth'])
+                        current_date = datetime.now().strftime('%d/%m/%Y')  # get the current date and time, format datetime objects into strings with a required date
+                        age = datetime.now().year - int(element['year_of_birth'])
+                        self.title = self.title.replace("Post from json file", "Birthday Greeting")
+                        file.write(f"{self.title}\n{element['person']}\n{current_date}, {age} yeas old\n{element['birthday_greeting']}\n\n")
+                        self.title = self.title.replace("Birthday Greeting", "Post from json file")
+                    except (ValueError):
+                        print(f"Year of birth has wrong format. The post '{element}' can not be published.")
+                        self.not_remove = 1
+                else:
+                    print(
+                        f"The post '{element}' can not be published because it does not conform to the required format.")
+                    self.not_remove = 1
+            except (KeyError):
+                print(f"The post '{element}' can not be published because it does not conform to the required format.")
+                self.not_remove = 1
+    def return_file_path(self):
+        return self.file_path
 # Create new class PostFromFile - subclass of NewsFeed
 class PostFromFile(NewsFeed):
     def __init__(self, post_type, file_path, post_lines = []):
