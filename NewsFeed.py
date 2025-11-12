@@ -5,177 +5,82 @@ import json
 # In each subclass: News, PrivateAd, BirthdayGreeting, publish will be overridden according to the task requirements.
 # create_title_info method will be inherited from NewsFeed class without changes.
 class NewsFeed:
-    def __init__ (self, post_type, info_text = ''):
+    def __init__ (self, text, post_type, info_text = ''):
         self.post_type = post_type
         self.info_text = info_text
+        self.text = text
     def create_title_info(self, title_len = 30):
         self.title = self.post_type + ' ' + ('-' * (title_len - len(self.post_type)))
         if self.info_text != '':
             self.title += '\n' + self.info_text
+    # Method that adds a punctuation mark at the end if one is missing and applies a function to normalize letter case.
+    def normalize_text(self):
+        if self.text[-1] not in ('.', '!', '?'):
+            self.text = self.text.strip() + '.'
+        self.text = normalize_letter_cases(self.text)
     def publish(self, file):
         pass
-# Create new class PostFromJsonFile - subclass of NewsFeed
-class PostFromJsonFile(NewsFeed):
-    def __init__(self, post_type, file_path, posts_json = [], not_remove = 0):
-        super().__init__(post_type)
-        self.file_path = file_path
-        self.post_type = post_type
-        self.posts_json = posts_json
-        self.not_remove = not_remove
-    def read_json_file(self):
-        #self.posts_json = json.load(open(self.file_path))
-        with open(self.file_path, 'r', encoding='utf-8') as f:
-            self.posts_json = json.load(f)
-    def publish(self, file):
-        for element in self.posts_json:
-            try:
-                if element['type'] == 1:
-                    formatted_date_time = datetime.now().strftime("%d/%m/%Y %H.%M")  # get the current date and time, format datetime objects into strings with a required date/time format
-                    self.title = self.title.replace("Post from json file", "News")
-                    file.write(f"{self.title}\n{element['news']}\n{element['city']}, {formatted_date_time}\n\n")
-                    self.title = self.title.replace("News", "Post from json file")
-                elif element['type'] == 2:
-                    try: # validate format and value of expiration date
-                        datetime.strptime(element['expiration_date'], "%d/%m/%Y")
-                        expiration_date_json = datetime.strptime(element['expiration_date'], "%d/%m/%Y")
-                        days_left = (expiration_date_json - datetime.now()).days  # calculate days left
-                        self.title = self.title.replace("Post from json file", "Private Ad")
-                        file.write(f"{self.title}\n{element['private_ad']}\nActual until: {expiration_date_json.strftime('%d/%m/%Y')}, {days_left} days left\n\n")
-                        self.title = self.title.replace("Private Ad", "Post from json file")
-                    except (ValueError):
-                        print(f"Expiration date has wrong format. The post '{element}' can not be published.")
-                        self.not_remove = 1
-                elif element['type'] == 3:
-                    try: # validate data type and value of year of birth
-                        int(element['year_of_birth'])
-                        current_date = datetime.now().strftime('%d/%m/%Y')  # get the current date and time, format datetime objects into strings with a required date
-                        age = datetime.now().year - int(element['year_of_birth'])
-                        self.title = self.title.replace("Post from json file", "Birthday Greeting")
-                        file.write(f"{self.title}\n{element['person']}\n{current_date}, {age} yeas old\n{element['birthday_greeting']}\n\n")
-                        self.title = self.title.replace("Birthday Greeting", "Post from json file")
-                    except (ValueError):
-                        print(f"Year of birth has wrong format. The post '{element}' can not be published.")
-                        self.not_remove = 1
-                else:
-                    print(
-                        f"The post '{element}' can not be published because it does not conform to the required format.")
-                    self.not_remove = 1
-            except (KeyError):
-                print(f"The post '{element}' can not be published because it does not conform to the required format.")
-                self.not_remove = 1
-    def return_file_path(self):
-        return self.file_path
-# Create new class PostFromFile - subclass of NewsFeed
-class PostFromFile(NewsFeed):
-    def __init__(self, post_type, file_path, posts_list = [], not_remove = 0):
-        super().__init__(post_type)
-        self.file_path = file_path
-        self.post_type = post_type
-        self.post_list = posts_list
-        self.not_remove = not_remove
-    def read_file(self):
-        with open(self.file_path, "r", encoding="utf-8") as f:
-            file_content = f.read()
-        # Split by ';' to get the main list of records (filter out empty strings)
-        file_list = [element for element in file_content.split(';')]
-        # Split each element by '|' to create nested lists of elements in post
-        self.posts_list = [item.split('|') for item in file_list]
-    def publish(self, file):
-        for element in self.posts_list:
-            if element[0] == '1':
-                if len(element) != 3:
-                    print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                    self.not_remove = 1
-                else:
-                    if element[1][-1] not in ('.', '?', '!'):
-                        print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                    else:
-                        formatted_date_time = datetime.now().strftime("%d/%m/%Y %H.%M")  # get the current date and time, format datetime objects into strings with a required date/time format
-                        self.title = self.title.replace("Post from file", "News")
-                        element[1] = normalize_letter_cases(element[1] )
-                        file.write(f"{self.title}\n{element[1]}\n{element[2]}, {formatted_date_time}\n\n")
-                        self.title = self.title.replace("News", "Post from file")
-            elif element[0] == '2':
-                if len(element) != 3:
-                    print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                    self.not_remove = 1
-                else:
-                    try:  # validate format of expiration date
-                        datetime.strptime(element[2], "%d/%m/%Y")
-                        expiration_date_file = datetime.strptime(element[2], "%d/%m/%Y")
-                        days_left = (expiration_date_file - datetime.now()).days  # calculate days left
-                        if element[1][-1] not in ('.', '?', '!'):
-                            print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                        else:
-                            self.title = self.title.replace("Post from file", "Private Ad")
-                            element[1] = normalize_letter_cases(element[1])
-                            file.write(f"{self.title}\n{element[1]}\nActual until: {expiration_date_file.strftime('%d/%m/%Y')}, {days_left} days left\n\n")
-                            self.title = self.title.replace("Private Ad", "Post from file")
-                    except (ValueError):
-                        print(f"Expiration date has wrong format. The post '{'|'.join(element)}' can not be published.")
-                        self.not_remove = 1
-            elif element[0] == '3':
-                if len(element) != 4:
-                    print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                    self.not_remove = 1
-                else:
-                    try:  # validate data type of year of birth
-                        int(element[2])
-                        current_date = datetime.now().strftime('%d/%m/%Y')  # get the current date and time, format datetime objects into strings with a required date
-                        age = datetime.now().year - int(element[2])
-                        if element[3][-1] not in ('.', '?', '!'):
-                            print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                        else:
-                            self.title = self.title.replace("Post from file", "Birthday Greeting")
-                            element[3] = normalize_letter_cases(element[3])
-                            file.write( f"{self.title}\n{element[1]}\n{current_date}, {age} yeas old\n{element[3]}\n\n")
-                            self.title = self.title.replace("Birthday Greeting", "Post from file")
-                    except (ValueError):
-                        print(f"Year of birth has wrong format. The post '{'|'.join(element)}' can not be published.")
-                        self.not_remove = 1
-            else:
-                print(f"The post '{'|'.join(element)}' can not be published because it does not conform to the required format.")
-                self.not_remove = 1
-    def return_file_path(self):
-        return self.file_path
-
 # Create class News - subclass of NewsFeed
 class News(NewsFeed):
     # Initialize News class
     def __init__(self, text, city, post_type):
-        super().__init__(post_type)
+        super().__init__(text, post_type)
         self.text = text
         self.city = city
         self.post_type = post_type
     # Overwrite publish method that write News required data in the file
     def publish(self, file):
         formatted_date_time = datetime.now().strftime("%d/%m/%Y %H.%M") # get the current date and time, format datetime objects into strings with a required date/time format
-        file.write(f"{self.title}\n{self.text}\n{self.city}, {formatted_date_time}\n\n")
+        published_record = f"{self.title}\n{self.text}\n{self.city}, {formatted_date_time}"
+        file.write(f"{published_record}\n\n")
+        return published_record
 
 # Create class PrivateAd - subclass of NewsFeed
 class PrivateAd(NewsFeed):
     # Initialize PrivateAd class
     def __init__(self, text, expiration_date, post_type):
-        super().__init__(post_type)
+        super().__init__(text, post_type)
         self.text = text
-        self.expiration_date = datetime.strptime(expiration_date, "%d/%m/%Y")
+        self.expiration_date = expiration_date
         self.post_type = post_type
+    # method that check date format and validity
+    def is_valid_date(self):
+        try:
+            self.expiration_date = datetime.strptime(self.expiration_date, '%d/%m/%Y')
+            if self.expiration_date < datetime.now():
+                return False
+            return True
+        except ValueError:
+            return False
     # Overwrite publish method that write Private Ad required data in the file
     def publish(self, file):
         days_left = (self.expiration_date - datetime.now()).days # calculate days left
-        file.write(f"{self.title}\n{self.text}\nActual until: {self.expiration_date.strftime('%d/%m/%Y')}, {days_left} days left\n\n")
+        published_record = f"{self.title}\n{self.text}\nActual until: {self.expiration_date.strftime('%d/%m/%Y')}, {days_left} days left"
+        file.write(f"{published_record}\n\n")
+        return published_record
 
 # Create class BirthdayGreeting - subclass of NewsFeed.
 # Where person who has birthday,  year of birth, greeting text are as input. Person age is calculated during publishing
 class BirthdayGreeting (NewsFeed):
     def __init__(self, person, birth_year, text, post_type):
-        super().__init__(post_type)
+        super().__init__(text, post_type)
         self.person = person
         self.birth_year = birth_year
         self.post_type = post_type
         self.text = text
+    # method that check year validity
+    def is_valid_birth_year(self):
+        try:
+            int(self.birth_year)
+            if int(self.birth_year) >= datetime.now().year:
+                return False
+            return True
+        except ValueError:
+            return False
 
     def publish(self, file):
         current_date = datetime.now().strftime('%d/%m/%Y') # get the current date and time, format datetime objects into strings with a required date
         age = datetime.now().year - int(self.birth_year)
-        file.write(f"{self.title}\n{self.person}\n{current_date}, {age} yeas old\n{self.text}\n\n")
+        published_record = f"{self.title}\n{self.person}\n{current_date}, {age} yeas old\n{self.text}"
+        file.write(f"{published_record}\n\n")
+        return published_record
