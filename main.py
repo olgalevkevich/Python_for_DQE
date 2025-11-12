@@ -1,9 +1,8 @@
 import os
-import elevate
-import json
-from datetime import datetime
-from NewsFeed import PostFromFile, News, PrivateAd, BirthdayGreeting, PostFromJsonFile
+from NewsFeed import News, PrivateAd, BirthdayGreeting
 from CreateCSV import FileCSV, WordCountCSV, LetterCountCSV
+from ParsingTXT import ParsingTXT
+from ParsingJson import ParsingJson
 if __name__ == "__main__":
     file_name = "news_feed.txt" # specify the path and file name
     while True:
@@ -13,7 +12,7 @@ if __name__ == "__main__":
                 1 - News
                 2 - Private Ad
                 3 - Birthday Greeting
-                4 - Post from file
+                4 - Post from text file
                 5 - Post from json file
                 6 - Exit the application""")
             choice = input("Enter your choice (1/2/3/4/5/6): ")
@@ -28,79 +27,77 @@ if __name__ == "__main__":
             elif choice == "2":
                 text = input("Enter advertising text: ")
                 expiration_date = input("Enter expiration date (dd/mm/yyyy): ")
-                while True:
-                    try: # validate format and value of expiration date
-                        datetime.strptime(expiration_date, "%d/%m/%Y")
-                        if datetime.strptime(expiration_date, "%d/%m/%Y") < datetime.now():
-                            print('Entered expiration date is equal or less then current date. Try to enter again')
-                            expiration_date = input("Enter expiration date (dd/mm/yyyy): ")
-                        else:
-                            break
-                    except (ValueError):
-                        print("Entered expiration date has wrong format. Try to enter again.")
-                        expiration_date = input("Enter expiration date (dd/mm/yyyy): ")
                 record = PrivateAd(text, expiration_date, 'Private Ad')
+                while True:
+                    if record.is_valid_date() == False:
+                        print('Entered expiration date is invalid. Try to enter again')
+                        expiration_date = input("Enter expiration date (dd/mm/yyyy): ")
+                        record = PrivateAd(text, expiration_date, 'Private Ad')
+                    else:
+                        break
             # If post type: 3 - Birthday Greeting, ask enter required  Birthday Greeting data. Create a record  - object of Birthday Greeting class.
             elif choice == "3":
                 person_name = input("Enter person first and last name whose birthday it is : ")
-                input_year = input("Enter person year of birth : ")
-                while True:
-                    try: # validate data type and value of year of birth
-                        int(input_year)
-                        if int(input_year) >= datetime.now().year:
-                            print('Entered year of birth is more or equal then current year. Try to enter again')
-                            input_year = input("Enter person year of birth : ")
-                        else:
-                            break
-                    except (ValueError):
-                        print("Entered year of birth has wrong format. Try to enter again.")
-                        input_year = input("Enter person year of birth : ")
                 text = input("Enter birthday greeting text: ")
+                input_year = input("Enter person year of birth : ")
                 record = BirthdayGreeting(person_name, input_year, text, 'Birthday Greeting')
-            # if post type: 4 - Post from file, ask enter required  file path. Create a record  - object of Birthday Greeting class.
-            elif choice == '4':
                 while True:
+                    if record.is_valid_birth_year() == False:
+                        print('Entered year of birth is invalid. Try to enter again')
+                        input_year = input("Enter person year of birth : ")
+                        record = BirthdayGreeting(person_name, input_year, text, 'Birthday Greeting')
+                    else:
+                        break
+            # if post type: 4 - Post from file, ask enter required  file path.
+            # Receive lists of news, advertisements, birthday greetings from a text file, and the flag if the file contained data with an invalid format.
+            elif choice == '4':
+                is_invalid = 0
+                while True:
+                    not_continue_4 = 0
                     file_path_user = input("Enter file path or enter '-' to use default path: ")
                     if file_path_user == '-':
-                        file_path_user =  "C:/Users/post_file.txt"
-                    record = PostFromFile('Post from file', file_path_user)
-                    try:
-                        record.read_file()
-                        file_to_delete = record.return_file_path()
+                        file_path_user =  "post_file.txt"
+                    txt_data = ParsingTXT(file_path_user)
+                    is_valid_path = txt_data.validate_file_path()
+                    if is_valid_path == 1:
                         break
-                    except(FileNotFoundError, PermissionError):
-                        print ("Entered file path is incorrect of file does not exists.")
+                    else:
                         choice_file = input("Do you want to enter again (y/n)? : ")
                         if choice_file == 'y':
                             continue
                         elif choice_file == 'n':
-                            file_to_delete = ''
+                            not_continue_4 = 1
                             break
                         else:
                             print("Invalid choice. Try again.")
                             continue
-            # if post type: 5 - Post from json file, ask enter required  file path. Create a record  - object of PostFromJsonFile class.
+                if is_valid_path == 1:
+                    news, ads, birthday_greetings, is_invalid = txt_data.read_file()
+            # if post type: 5 - Post from json file, ask enter required  file path.
+            # Receive lists of news, advertisements, birthday greetings from a json file, and the flag if the file contained data with an invalid format.
             elif choice == '5':
+                is_invalid = 0
                 while True:
+                    not_continue_5 = 0
                     file_path_user = input("Enter json file path or enter '-' to use default path: ")
                     if file_path_user == '-':
-                        file_path_user =  "C:/Users/post_json.json"
-                    record = PostFromJsonFile('Post from json file', file_path_user)
-                    try:
-                        record.read_json_file()
-                        file_to_delete = record.return_file_path()
+                        file_path_user =  "post_json.json"
+                    json_data = ParsingJson(file_path_user)
+                    is_valid_path = json_data.validate_file_path()
+                    if is_valid_path == 1:
                         break
-                    except(FileNotFoundError, PermissionError, json.decoder.JSONDecodeError):
-                        print ("Entered json file path is incorrect or json file does not exists or json file has wrong format")
+                    else:
                         choice_file = input("Do you want to enter again (y/n)? : ")
                         if choice_file == 'y':
                             continue
                         elif choice_file == 'n':
-                            file_to_delete = ''
+                            not_continue_5 = 1
                             break
                         else:
                             print("Invalid choice. Try again.")
                             continue
+                if is_valid_path == 1:
+                    news, ads, birthday_greetings, is_invalid = json_data.read_file()
             # if Exit then stop ask question, break while loop
             elif choice == "6":
                 print("Exiting.")
@@ -109,56 +106,80 @@ if __name__ == "__main__":
             else:
                 print("Invalid choice. Try again.")
                 continue
-            record.create_title_info()
-            # Open specified file to write data to the end of the file.
-            if (choice != '4' and choice != '5'):
-                with open(file_name, "a", encoding="utf-8") as file:
-                    record.publish(file) # call publish method of corresponding record object
-                    # display a message about the publication.
-                print("Post published!\n")
+            # create an objects of WordCountCSV,  class
+            word_csv = WordCountCSV(file_name)
+            letter_csv = LetterCountCSV(file_name)
 
-                # create an object of WordCountCSV class, call methods: to read created text file, create csv file for word count
-                word_csv = WordCountCSV(file_name)
+            # Open specified file to write data to the end of the file for user choices 1,2,3
+            if (choice != '4' and choice != '5'):
+                record.create_title_info()
+                record.normalize_text()
+                with open(file_name, "a", encoding="utf-8") as file:
+                    post_published = record.publish(file) # call publish method of corresponding record object
+                    # display a message about the publication.
+                print(f"Post published:\n{post_published}\n")
                 word_csv.read_created_file()
                 word_csv.create_csv()
-
-                # create an object of LetterCountCSV class, call methods: to read created text file, create csv file for letter count
-                letter_csv = LetterCountCSV(file_name)
                 letter_csv.read_created_file()
                 letter_csv.create_csv()
-
-            if (choice == '5' or choice == '4') and file_to_delete != '':
+            # Open specified file to write data to the end of the file for user choices: 4,5 since files may contain several news items, advertisements, and birthday greetings.
+            if (choice == '4' and not_continue_4 == 0) or (choice == '5' and not_continue_5 == 0):
                 with open(file_name, "a", encoding="utf-8") as file:
-                    record.publish(file) # call publish method of corresponding record object
-                    # display a message about the publication.
-                flag_to_delete = record.not_remove
-                if flag_to_delete == 1:
-                    print(f"Not all posts from file '{file_to_delete}' published!\n")
-                else:
-                    print(f"All posts from file '{file_to_delete}' published!\n")
-                try:
-                    if flag_to_delete == 0:
-                        os.path.exists(file_to_delete)
-                        os.remove(file_to_delete)
-                        print(f"File '{file_to_delete}' has been deleted.\n")
-                    else:
-                        print(f"File '{file_to_delete}' has not been deleted because not all posts in the file conform to the required format.\n")
-                except(FileNotFoundError):
-                    print(f"File '{file_to_delete}' does not exist.")
-                except(PermissionError):
-                    print(
-                        f"Access to '{file_to_delete}' is denied. To delete the file, the program must be restarted to elevate its privileges. All published posts will remain published.")
-                    while True:
-                        choice_permitions = input("Do you want to restart the program? Enter your choice (y/n): ")
-                        if choice_permitions == 'y':
-                            elevate.elevate()
-                            break
-                        elif choice_permitions == 'n':
-                            break
-                        else:
-                            print("Invalid choice. Try again.")
-                            continue
-        # If the specified file does not exist, open the file and write the general header.
+                    if news != []:
+                        for post in news:
+                            record = News(post[0], post[1], 'News')
+                            record.create_title_info()
+                            record.normalize_text()
+                            post_published = record.publish(file)
+                            print(f"Post published:\n{post_published}\n")
+                            word_csv.read_created_file()
+                            word_csv.create_csv()
+                            letter_csv.read_created_file()
+                            letter_csv.create_csv()
+                    if ads != []:
+                        for post in ads:
+                            record = PrivateAd(post[0], post[1], 'Private Ad')
+                            if record.is_valid_date() == True:
+                                record.create_title_info()
+                                record.normalize_text()
+                                post_published = record.publish(file)
+                                print(f"Post published:\n{post_published}\n")
+                                word_csv.read_created_file()
+                                word_csv.create_csv()
+                                letter_csv.read_created_file()
+                                letter_csv.create_csv()
+                            else:
+                                is_invalid = 1
+                                print(f"Private Ad :\n{post}\ncan not be published because it has invalid expiration date\n")
+                    if birthday_greetings != []:
+                        for post in birthday_greetings:
+                            record = BirthdayGreeting(post[0], post[1], post[2], 'Birthday Greeting')
+                            if record.is_valid_birth_year() == True:
+                                record.create_title_info()
+                                record.normalize_text()
+                                post_published = record.publish(file)
+                                print(f"Post published:\n{post_published}\n")
+                                word_csv.read_created_file()
+                                word_csv.create_csv()
+                                letter_csv.read_created_file()
+                                letter_csv.create_csv()
+                            else:
+                                is_invalid = 1
+                                print(f"Birthday Greeting :\n{post}\ncan not be published because it has invalid year of birth\n")
+                # Check whether the file formats, date, and year are valid. If so, delete the files.
+                if  choice == '4' and is_invalid == 0:
+                    txt_data.delete_file()
+                elif choice == '4' and is_invalid == 1:
+                    print(f"File '{txt_data.file_path}' has not been deleted because it contains invalid posts. Posts with invalid format are in bad_records_txt.txt. Posts with invalid date or year are printed.\n")
+                    is_invalid == 0
+                if  choice == '5' and is_invalid == 0:
+                    json_data.delete_file()
+                elif choice == '5' and is_invalid == 1:
+                    print(f"File '{json_data.file_path}' has not been deleted because it contains invalid posts. Posts with invalid format are in bad_records_json.json. Posts with invalid date or year are printed.\n")
+                    is_invalid == 0
         else:
+            # If the specified file does not exist, open the file and write the general header.
             with open(file_name, "w", encoding="utf-8") as file:
                 file.write('News feed:\n')
+
+
