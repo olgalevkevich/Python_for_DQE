@@ -1,0 +1,28 @@
+<post_xml>
+	<post type="News">
+		<text>a new business center has opened</text>
+		<city>Brest</city>
+	</post>
+	<post type="Private Ad">
+		<text>New apartment for rent.</text>
+		<date>15/12/2025</date>
+	</post>
+	<post type="Birthday Greeting">
+		<person>Olga Ivanova</person>
+		<birth_year>1985</birth_year>
+		<text>happy birthday</text>
+	</post>
+	<post type="Private Ad">
+		<text>New apartment for sale</text>
+		<date>25/12/2025</date>
+	</post>
+	<post type="Birthday Greeting">
+		<person>Oleg Sidorov</person>
+		<birth_year>1990</birth_year>
+		<text>best wishes!</text>
+    </post>
+	<post type="News">
+		<text>a new museum has opened</text>
+		<city>Amsterdam</city>
+	</post>
+</post_xml>
