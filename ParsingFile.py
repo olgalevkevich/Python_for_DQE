@@ -20,7 +20,7 @@ class ParsingFile:
     def delete_file (self):
         try:
             os.remove(self.file_path)
-            print(f"File '{self.file_path}' has been deleted.\n")
+            print(f"File '{self.file_path}' has been successfully processed and deleted.\n")
         except(FileNotFoundError):
             print(f"File '{self.file_path}' does not exist.")
         except(PermissionError):

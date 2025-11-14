@@ -46,14 +46,15 @@ class PrivateAd(NewsFeed):
     # method that check date format and validity
     def is_valid_date(self):
         try:
-            self.expiration_date = datetime.strptime(self.expiration_date, '%d/%m/%Y')
-            if self.expiration_date < datetime.now():
+            expiration_date_to_validate = datetime.strptime(self.expiration_date, '%d/%m/%Y')
+            if expiration_date_to_validate < datetime.now():
                 return False
             return True
         except ValueError:
             return False
     # Overwrite publish method that write Private Ad required data in the file
     def publish(self, file):
+        self.expiration_date = datetime.strptime(self.expiration_date, '%d/%m/%Y')
         days_left = (self.expiration_date - datetime.now()).days # calculate days left
         published_record = f"{self.title}\n{self.text}\nActual until: {self.expiration_date.strftime('%d/%m/%Y')}, {days_left} days left"
         file.write(f"{published_record}\n\n")
