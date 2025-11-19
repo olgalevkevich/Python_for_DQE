@@ -4,12 +4,20 @@ from CreateCSV import FileCSV, WordCountCSV, LetterCountCSV
 from ParsingTXT import ParsingTXT
 from ParsingJson import ParsingJson
 from ParsingXML import ParsingXML
+from DBConnection import DBConnection
+from datetime import datetime
 if __name__ == "__main__":
     file_name = "news_feed.txt" # specify the path and file name
     while True:
         # If the specified file exists, suggest user to choose the post type: News/Private Ad/Birthday Greeting/post from files or exit the application
-        news, ads, birthday_greetings = [], [], []
+        news, ads, birthday_greetings, news_db, ads_db, birthday_greetings_db = [], [], [], [], [], []
         if os.path.exists(file_name):
+            column_names_news = ["NEWS_TEXT", "CITY", "NEWS_DATE"] # columns for News in NEWS table of NEWS_FEED.db
+            column_types_news = ["TEXT", "TEXT", "TEXT"] # column types in NEWS table
+            column_names_advertisement = ["AD_TEXT", "EXPIRATION_DATE", "DAYS_LEFT"] # columns for Private Ad in ADVERTISEMENT table of NEWS_FEED.db
+            column_types_advertisement = ["TEXT", "TEXT", "INTEGER"] # column types in ADVERTISEMENT table
+            column_names_birth = ["PERSON", "GREETING_DATE","YEARS_OLD", 'GREETING_TEXT']  # columns for Birthday greeting in BIRTHDAY_GREETING table of NEWS_FEED.db
+            column_types_birth = ["TEXT", "TEXT", "INTEGER", "TEXT"]  # column types in BIRTHDAY_GREETING table
             print("""Select post type you want to add to news feed:
                 1 - News
                 2 - Private Ad
@@ -25,6 +33,7 @@ if __name__ == "__main__":
                 text = input("Enter news text: ")
                 city = input("Enter city: ")
                 news.append(News(text, city, 'News'))
+                news_db.append(DBConnection('NEWS', column_names_news, column_types_news, [text, city, datetime.now().strftime("%d/%m/%Y %H.%M")]))
             # If post type: 2 - Private Ad, ask enter required Private Ad data. Create a record  - object of PrivateAd class.
             elif choice == "2":
                 text = input("Enter advertising text: ")
@@ -37,6 +46,7 @@ if __name__ == "__main__":
                         record = PrivateAd(text, expiration_date, 'Private Ad')
                     else:
                         ads.append(PrivateAd(text, expiration_date, 'Private Ad'))
+                        ads_db.append(DBConnection('ADVERTISEMENT', column_names_advertisement, column_types_advertisement, [text, expiration_date, (datetime.strptime(expiration_date, '%d/%m/%Y') -  datetime.now()).days]))
                         break
             # If post type: 3 - Birthday Greeting, ask enter required  Birthday Greeting data. Create a record  - object of Birthday Greeting class.
             elif choice == "3":
@@ -51,6 +61,7 @@ if __name__ == "__main__":
                         record = BirthdayGreeting(person_name, input_year, text, 'Birthday Greeting')
                     else:
                         birthday_greetings.append(BirthdayGreeting(person_name, input_year, text, 'Birthday Greeting'))
+                        birthday_greetings_db.append(DBConnection('BIRTHDAY_GREETING', column_names_birth, column_types_birth, [person_name, datetime.now().strftime("%d/%m/%Y %H.%M"), datetime.now().year - int(input_year), text]))
                         break
             # if post type: 4 - Post from file, ask enter required  file path.
             # Receive lists of news, advertisements, birthday greetings from a text file, and the flag if the file contained data with an invalid format.
@@ -143,38 +154,45 @@ if __name__ == "__main__":
                 word_csv = WordCountCSV(file_name)
                 letter_csv = LetterCountCSV(file_name)
                 records = []
+                records_db = []
 
-                for post in news:
-                    if isinstance(post, list):
-                        records.append(News(post[0], post[1], 'News'))
-                    elif isinstance(post, News):
-                        records.append(post)
+                for i in range(len(news)):
+                    if isinstance(news[i], list):
+                        records.append(News(news[i][0], news[i][1], 'News'))
+                        records_db.append(DBConnection('NEWS', column_names_news, column_types_news, [news[i][0], news[i][1], datetime.now().strftime("%d/%m/%Y %H.%M")]))
+                    elif isinstance(news[i], News):
+                        records.append(news[i])
+                        records_db.append(news_db[i])
 
-                for post in ads:
-                    if isinstance(post, list):
-                        ads_object = PrivateAd(post[0], post[1], 'Private Ad')
+                for i in range(len(ads)):
+                    if isinstance(ads[i], list):
+                        ads_object = PrivateAd(ads[i][0], ads[i][1], 'Private Ad')
                         if ads_object.is_valid_date() == True:
                             records.append(ads_object)
+                            records_db.append(DBConnection('ADVERTISEMENT', column_names_advertisement, column_types_advertisement,[ads[i][0], ads[i][1],(datetime.strptime(ads[i][1], '%d/%m/%Y') - datetime.now()).days]))
                         else:
-                            print(f"Private Ad :\n{post}\ncan not be published because it has invalid expiration date\n")
-                    elif isinstance(post, PrivateAd):
-                        records.append(post)
+                            print(f"Private Ad :\n{ads[i]}\ncan not be published because it has invalid expiration date\n")
+                    elif isinstance(ads[i], PrivateAd):
+                        records.append(ads[i])
+                        records_db.append(ads_db[i])
 
-                for post in birthday_greetings:
-                    if isinstance(post, list):
-                        birth_object = BirthdayGreeting(post[0], post[1], post[2], 'Birthday Greeting')
+                for i in range(len(birthday_greetings)):
+                    if isinstance(birthday_greetings[i], list):
+                        birth_object = BirthdayGreeting(birthday_greetings[i][0], birthday_greetings[i][1], birthday_greetings[i][2], 'Birthday Greeting')
                         if birth_object.is_valid_birth_year() == True:
                             records.append(birth_object)
+                            records_db.append(DBConnection('BIRTHDAY_GREETING', column_names_birth, column_types_birth,[birthday_greetings[i][0], datetime.now().strftime("%d/%m/%Y %H.%M"), datetime.now().year - int(birthday_greetings[i][1]), birthday_greetings[i][2]]))
                         else:
-                            print(f"Private Ad :\n{post}\ncan not be published because it has invalid year of birth\n")
-                    elif isinstance(post, BirthdayGreeting):
-                        records.append(post)
+                            print(f"Private Ad :\n{birthday_greetings[i]}\ncan not be published because it has invalid year of birth\n")
+                    elif isinstance(birthday_greetings[i], BirthdayGreeting):
+                        records.append(birthday_greetings[i])
+                        records_db.append(birthday_greetings_db[i])
 
-                for rec in records:
-                    rec.create_title_info()
-                    rec.normalize_text()
+                for i in range(len(records)):
+                    records[i].create_title_info()
+                    records[i].normalize_text()
                     with open(file_name, "a", encoding="utf-8") as file:
-                        post_published = rec.publish(file)  # call publish method of corresponding record object
+                        post_published = records[i].publish(file) # call publish method of corresponding record object
                         # display a message about the publication.
                         print(f"Post published:\n{post_published}\n")
 
@@ -182,6 +200,9 @@ if __name__ == "__main__":
                     word_csv.create_csv()
                     letter_csv.read_created_file()
                     letter_csv.create_csv()
+
+                    records_db[i].create_table()
+                    records_db[i].insert_data()
         else:
             # If the specified file does not exist, open the file and write the general header.
             with open(file_name, "w", encoding="utf-8") as file:
