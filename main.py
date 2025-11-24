@@ -50,8 +50,6 @@ if __name__ == "__main__":
             lon[i] = coord_city[i][2]
         except IndexError:
             lat.append(coord_city[i][1])
-            lon.append(coord_city[i][1])
+            lon.append(coord_city[i][2])
     distance = distance_ins.calculate_distance(lat[0], lon[0], lat[1], lon[1]) # calculate the distance between specified cities
     print(f"Distance between {city[0]} and {city[1]}: {distance} km")
-
-
